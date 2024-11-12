@@ -21,7 +21,7 @@ const chatSchema = new Schema(
     },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt fields
+    timestamps: { currentTime: () => new Date().toISOString() }, // Adds createdAt and updatedAt fields
   }
 );
 
