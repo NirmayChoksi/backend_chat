@@ -60,7 +60,7 @@ app.post('/upload', upload.array('images', 5), (req, res) => {
     // Send a success response with the uploaded file information
     res.json({
         message: 'Files uploaded successfully',
-        files: req.files.map((file) => `http://localhost:3000/${file.path}`), // Only send the filepath
+        files: req.files.map((file) => `https://backend-chat-6wdi.onrender.com/${file.path}`), // Only send the filepath
     });
 });
 
@@ -72,7 +72,7 @@ app.delete('/delete-file', async (req, res) => {
     }
 
     const fullPath = path.resolve(
-        imagePath.replace('http://localhost:3000/', '')
+        imagePath.replace('https://backend-chat-6wdi.onrender.com:3000/', '')
     );
 
     try {
