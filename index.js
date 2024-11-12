@@ -21,7 +21,12 @@ app.use(bodyParser.json());
 // Set up multer to store uploaded files in the "uploads" folder
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/');
+        const uploadDir = 'uploads'; // Specify the upload directory
+        // Check if the 'uploads' directory exists, if not, create it
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir);
+        }
+        cb(null, uploadDir); // Save the file to the 'uploads' directory
     },
     filename: function (req, file, cb) {
         console.log('file.originalname:', file.originalname);
