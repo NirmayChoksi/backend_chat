@@ -29,7 +29,7 @@ const handleNewConnection = () => {
 
         socket.on('send_private_message', async ({ from, to, content, imageUrl }) => {
             // Handle private message
-            const newMessage = await Chat.create({ from, to, content, isGroup: false, imageUrl });
+            const newMessage = await Chat.create({ from, to, content, isGroup: false, imageUrl: [imageUrl] });
             let recipientId = users.get(to);
             if (!recipientId) {
                 const userId = to
@@ -55,7 +55,7 @@ const handleNewConnection = () => {
 
         socket.on('send_group_message', async ({ from, groupId, content, imageUrl }) => {
             // Handle group message
-            const newMessage = await Chat.create({ from, to: groupId, content, isGroup: true, imageUrl });
+            const newMessage = await Chat.create({ from, to: groupId, content, isGroup: true, imageUrl: [imageUrl] });
             const groupMembers = groups.get(groupId);
             if (groupMembers) {
                 io.to(groupMembers).emit('group_message', newMessage);
