@@ -13,7 +13,7 @@ const groups = new Map();
 const initializeSocketIo = (server) => {
     io = new Server(server, {
         cors: {
-            origin: ['http://localhost:8100', 'http://localhost:4200'],
+            origin: ['*'],
             methods: ['GET', 'POST'],
             credentials: true,
         },
