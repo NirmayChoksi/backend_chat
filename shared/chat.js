@@ -30,7 +30,12 @@ const handleNewConnection = () => {
         socket.on('send_private_message', async ({ from, to, content, imageUrl }) => {
             // Handle private message
             const newMessage = await Chat.create({ from, to, content, isGroup: false, imageUrl });
-            const recipientId = users.get(to);
+            let recipientId = users.get(to);
+            if (!recipientId) {
+                const userId = to
+                users.set(userId, socket.id)
+                recipientId = users.get(to)
+            }
             const sender = users.get(from);
             if (recipientId) {
                 io.to([recipientId, sender]).emit('private_message', newMessage);
