@@ -20,7 +20,7 @@ const initializeSocketIo = (server) => {
   //     },
   // });
 
-  io = Server(server, {
+  io = new Server(server, {
     cors: {
       origins: ['*'],
       handlePreflightRequest: (req, res) => {
