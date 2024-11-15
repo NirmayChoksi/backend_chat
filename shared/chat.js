@@ -29,8 +29,6 @@ const handleNewConnection = () => {
 
         socket.on('send_private_message', async ({ from, to, content, imageUrl }) => {
             // Handle private message
-            console.log('{ from, to, content, imageUrl }:', { from, to, content, imageUrl });
-
             const newMessage = await Chat.create({ from, to, content, isGroup: false, imageUrl });
             let recipientId = users.get(to);
             if (!recipientId) {

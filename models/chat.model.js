@@ -13,7 +13,7 @@ const chatSchema = new Schema(
     to: { type: String }, // recipient's userId or groupId (can be ObjectId if referencing Group/User)
     isGroup: { type: Boolean }, // Whether it's a group message or a private message
     content: { type: String },
-    imageUrl: { String }, // Array of image URLs
+    imageUrl: { type: String }, // Array of image URLs
     status: {
       type: String,
       enum: Object.values(MessageStatus),
