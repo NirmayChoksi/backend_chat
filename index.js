@@ -102,8 +102,8 @@ app.delete('/delete-file', async (req, res) => {
 
 app.post('/create-group', async (req, res) => {
   try {
-    const { users } = req.body;
-    const newGroup = new Group({ users });
+    const { users, name } = req.body;
+    const newGroup = new Group({ users, name });
 
     await newGroup.save();
 
@@ -151,7 +151,7 @@ app.get('/user-chats/:user', async (req, res) => {
 
     chats.forEach((message) => {
       const chatIdentifier = getChatIdentifier(message);
-      
+
       if (!seenChats.has(chatIdentifier)) {
         seenChats.add(chatIdentifier);
         latestChats.push(message);

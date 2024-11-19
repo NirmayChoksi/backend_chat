@@ -5,6 +5,7 @@ const { Schema } = mongoose;
 const groupSchema = new Schema(
   {
     users: [{ type: String }],
+    name: { type: String },
   },
   {
     timestamps: true, // Adds createdAt and updatedAt fields
