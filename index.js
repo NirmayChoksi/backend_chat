@@ -136,7 +136,7 @@ app.get('/user-chats/:user', async (req, res) => {
     const seenChats = new Set();
 
     chats.forEach((message) => {
-      const chatIdentifier = message.group ? message.to : message.from;
+      const chatIdentifier = message.isGroup ? message.to : message.from;
 
       if (!seenChats.has(chatIdentifier)) {
         seenChats.add(chatIdentifier);

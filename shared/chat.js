@@ -51,6 +51,7 @@ const handleNewConnection = () => {
           from,
           to,
           content,
+          isGroup: false,
           imageUrl,
         });
         let recipientId = users.get(to);
@@ -85,7 +86,7 @@ const handleNewConnection = () => {
           from,
           to: groupId,
           content,
-          group: groupId,
+          isGroup: true,
           imageUrl,
         });
         const groupMembers = groups.get(groupId);
@@ -95,12 +96,12 @@ const handleNewConnection = () => {
       }
     );
 
-    socket.on('fetch_messages', async ({ userId, chatWithId }) => {
+    socket.on('fetch_messages', async ({ userId, chatWithId, isGroup }) => {
       // Handle fetching message history
       const messages = await Chat.find({
         $or: [
-          { from: userId.trim(), to: chatWithId.trim() },
-          { from: chatWithId.trim(), to: userId.trim() },
+          { from: userId.trim(), to: chatWithId.trim(), isGroup },
+          { from: chatWithId.trim(), to: userId.trim(), isGroup },
         ],
       }).sort({ timestamp: 1 });
 
