@@ -11,7 +11,7 @@ const chatSchema = new Schema(
   {
     from: { type: String }, // sender's userId (can be ObjectId if referencing User model)
     to: { type: String }, // recipient's userId or groupId (can be ObjectId if referencing Group/User)
-    isGroup: { type: Boolean }, // Whether it's a group message or a private message
+    group: { type: Schema.Types.ObjectId }, // Whether it's a group message or a private message
     content: { type: String },
     imageUrl: { type: String }, // Array of image URLs
     status: {
