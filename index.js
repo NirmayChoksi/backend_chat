@@ -118,26 +118,40 @@ app.post('/create-group', async (req, res) => {
 app.get('/user-chats/:user', async (req, res) => {
   try {
     const { user } = req.params;
-    const userGroups = await Group.find({ users: user }, '_id');
-    const groupIds = userGroups.map((group) => group._id.toString());
 
+    // Fetch group IDs where the user is a member
+    const userGroups = await Group.find({ users: user }, '_id');
+    const groupIds = userGroups.map((group) => group._id.toString()); // Ensure group IDs are in string format
+
+    // Fetch active chats involving the user (both individual and group chats)
     const chats = await Chat.find({
       $or: [
         { to: user }, // Messages received by the user
         { from: user }, // Messages sent by the user
         { to: { $in: groupIds } }, // Group messages where the user is a member
       ],
-      status: 'ACTIVE', // Optional: Only active messages
+      status: 'ACTIVE', // Only active messages
     })
       .sort({ createdAt: -1 }) // Sort by newest first
-      .exec();
+      .lean();
 
+    // Helper function to generate a unique identifier for a chat
+    const getChatIdentifier = (message) => {
+      if (message.isGroup) {
+        return message.to.toString(); // For group messages, use the group ID
+      } else {
+        // For individual messages, combine `from` and `to` to form a unique identifier
+        return [message.from, message.to].sort().join('-');
+      }
+    };
+
+    // Deduplicate chats to get the latest message for each conversation (either individual or group)
     const latestChats = [];
     const seenChats = new Set();
 
     chats.forEach((message) => {
-      const chatIdentifier = message.isGroup ? message.to : message.from;
-
+      const chatIdentifier = getChatIdentifier(message);
+      
       if (!seenChats.has(chatIdentifier)) {
         seenChats.add(chatIdentifier);
         latestChats.push(message);
@@ -146,6 +160,7 @@ app.get('/user-chats/:user', async (req, res) => {
 
     return res.json({ chats: latestChats });
   } catch (error) {
+    console.error('Error fetching user chats:', error);
     return res.status(500).json({ error: 'Error fetching chats' });
   }
 });
