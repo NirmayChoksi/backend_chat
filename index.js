@@ -247,7 +247,7 @@ app.get('/user-chats/:user', async (req, res) => {
 });
 
 const MONGO_URI =
-  'mongodb+srv://Nirmaychoksi:NirmayChoksi2002@cluster0.sq3jqlb.mongodb.net/VW_Database';
+  'mongodb+srv://Nirmaychoksi:NirmayChoksi2002@cluster0.sq3jqlb.mongodb.net/VW_Chat_Database';
 
 mongoose.connect(MONGO_URI).then(() => {
   console.log('Connected to MongoDB');
