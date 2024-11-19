@@ -11,15 +11,6 @@ const users = new Map();
 const groups = new Map();
 
 const initializeSocketIo = (server) => {
-  // io = new Server(server, {
-  //     cors: {
-  //         // origin: ['http://localhost:8100', 'http://localhost:4200', 'https://localhost', 'http://192.168.1.5:8101', 'http://192.168.1.3:8101'],
-  //         origin: '/*',
-  //         methods: ['GET', 'POST'],
-  //         credentials: true,
-  //     },
-  // });
-
   io = new Server(server, {
     cors: {
       origins: ['*'],
@@ -54,15 +45,13 @@ const handleNewConnection = () => {
           isGroup: false,
           imageUrl,
         });
-        let recipientId = users.get(to);
-        if (!recipientId) {
-          const userId = to;
-          users.set(userId, socket.id);
-          recipientId = users.get(to);
-        }
+        const recipientId = users.get(to);
+
         const sender = users.get(from);
         if (recipientId) {
           io.to([recipientId, sender]).emit('private_message', newMessage);
+        } else {
+          io.to([sender]).emit('private_message', newMessage);
         }
       }
     );
@@ -85,6 +74,7 @@ const handleNewConnection = () => {
         const newMessage = await Chat.create({
           from,
           to: groupId,
+          toRef: 'Group',
           content,
           isGroup: true,
           imageUrl,

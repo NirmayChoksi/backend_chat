@@ -4,8 +4,9 @@ const { Schema } = mongoose;
 
 const groupSchema = new Schema(
   {
-    users: [{ type: String }],
+    users: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     name: { type: String },
+    avatar: { type: String },
   },
   {
     timestamps: true, // Adds createdAt and updatedAt fields

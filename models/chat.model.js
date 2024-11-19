@@ -9,9 +9,10 @@ const MessageStatus = {
 
 const chatSchema = new Schema(
   {
-    from: { type: String }, // sender's userId (can be ObjectId if referencing User model)
-    to: { type: String }, // recipient's userId or groupId (can be ObjectId if referencing Group/User)
-    isGroup: { type: Boolean }, // Whether it's a group message or a private message
+    from: { type: Schema.Types.ObjectId, ref: 'User' }, // sender's userId (can be ObjectId if referencing User model)
+    to: { type: Schema.Types.ObjectId, refPath: 'toRef' }, // recipient's userId or groupId (can be ObjectId if referencing Group/User)
+    toRef: { type: String, enum: ['User', 'Group'], default: 'User' },
+    isGroup: { type: Boolean, default: false }, // Whether it's a group message or a private message
     content: { type: String },
     imageUrl: { type: String }, // Array of image URLs
     status: {

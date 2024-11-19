@@ -9,6 +9,7 @@ const http = require('http');
 const { initializeSocketIo } = require('./shared/chat'); // Import the socket handler
 const { Group } = require('./models/group.model');
 const { Chat } = require('./models/chat.model');
+const { User } = require('./models/user.model');
 
 // Initialize the app
 const app = express();
@@ -58,6 +59,44 @@ const upload = multer({
 // Serve static files from the "uploads" folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+app.post('/login', async (req, res) => {
+  try {
+    const { userName } = req.body;
+
+    // Define avatar options
+    const avatars = [
+      'https://cdn-icons-png.flaticon.com/512/6997/6997662.png',
+      'https://cdn-icons-png.flaticon.com/128/1999/1999625.png',
+    ];
+
+    // Check if the user already exists, case-insensitive search
+    let user = await User.findOne({
+      userName: { $regex: new RegExp('^' + userName + '$', 'i') },
+    });
+
+    if (!user) {
+      // If user doesn't exist, create a new user with a random avatar
+      const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
+      user = new User({
+        userName,
+        avatar: randomAvatar,
+      });
+
+      await user.save(); // Save the new user
+    }
+
+    // Return the user ID and userName (along with avatar if needed)
+    return res.json({
+      userId: user.id,
+      userName: user.userName,
+      avatar: user.avatar,
+    });
+  } catch (error) {
+    console.error('Error in login API:', error);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Route to upload images
 app.post('/upload', upload.array('images', 5), (req, res) => {
   if (!req.files) {
@@ -102,9 +141,21 @@ app.delete('/delete-file', async (req, res) => {
 
 app.post('/create-group', async (req, res) => {
   try {
-    const { users, name } = req.body;
-    const newGroup = new Group({ users, name });
+    const { userIds, name } = req.body;
 
+    const users = await User.find({ _id: { $in: userIds } }).lean();
+    if (userIds.length !== users.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const avatars = [
+      'https://cdn-icons-png.flaticon.com/128/1474/1474494.png',
+      'https://cdn-icons-png.flaticon.com/128/6556/6556024.png',
+      'https://cdn-icons-png.flaticon.com/128/4596/4596136.png',
+    ];
+    const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
+
+    const newGroup = new Group({ users: userIds, name, avatar: randomAvatar });
     await newGroup.save();
 
     return res
@@ -115,57 +166,86 @@ app.post('/create-group', async (req, res) => {
   }
 });
 
-app.get('/user-chats/:user', async (req, res) => {
+app.get('/users/:userId', async (req, res) => {
   try {
-    const { user } = req.params;
+    const { userId } = req.params;
 
-    // Fetch group IDs where the user is a member
-    const userGroups = await Group.find({ users: user }, '_id');
-    const groupIds = userGroups.map((group) => group._id.toString()); // Ensure group IDs are in string format
+    const users = await User.find({ _id: { $ne: userId } }).lean();
 
-    // Fetch active chats involving the user (both individual and group chats)
-    const chats = await Chat.find({
-      $or: [
-        { to: user }, // Messages received by the user
-        { from: user }, // Messages sent by the user
-        { to: { $in: groupIds } }, // Group messages where the user is a member
-      ],
-      status: 'ACTIVE', // Only active messages
-    })
-      .sort({ createdAt: -1 }) // Sort by newest first
-      .lean();
-
-    // Helper function to generate a unique identifier for a chat
-    const getChatIdentifier = (message) => {
-      if (message.isGroup) {
-        return message.to.toString(); // For group messages, use the group ID
-      } else {
-        // For individual messages, combine `from` and `to` to form a unique identifier
-        return [message.from, message.to].sort().join('-');
-      }
-    };
-
-    // Deduplicate chats to get the latest message for each conversation (either individual or group)
-    const latestChats = [];
-    const seenChats = new Set();
-
-    chats.forEach((message) => {
-      const chatIdentifier = getChatIdentifier(message);
-
-      if (!seenChats.has(chatIdentifier)) {
-        seenChats.add(chatIdentifier);
-        latestChats.push(message);
-      }
-    });
-
-    return res.json({ chats: latestChats });
+    return res.json({ users });
   } catch (error) {
     console.error('Error fetching user chats:', error);
     return res.status(500).json({ error: 'Error fetching chats' });
   }
 });
 
-// Connect to MongoDB
+app.get('/user-chats/:user', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).lean();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const userGroups = await Group.find({ users: userId }, '_id').lean();
+    const groupIds = userGroups.map((group) => group._id.toString());
+
+    const chats = await Chat.find({
+      $or: [{ to: user }, { from: user }, { to: { $in: groupIds } }],
+      status: 'ACTIVE',
+    })
+      .sort({ createdAt: -1 })
+      .populate('to', 'userName name')
+      .populate('from')
+      .lean();
+
+    const userChats = {};
+
+    chats.forEach((message) => {
+      let key;
+      let chatId;
+      let avatar;
+      if (message.toRef === 'Group') {
+        key = message.to.name;
+        chatId = message.to._id;
+        avatar = message.to.avatar;
+      } else {
+        key =
+          message.to._id.toString() === userId
+            ? message.from.userName
+            : message.to.userName;
+        chatId =
+          message.to._id.toString() === userId
+            ? message.from._id
+            : message.to._id;
+        avatar =
+          message.to._id.toString() === userId
+            ? message.from.avatar
+            : message.to.avatar;
+      }
+
+      if (!userChats[key]) {
+        userChats[key] = [];
+      }
+
+      userChats[key].push({
+        from: message.from.userName,
+        message: message.content,
+        createdAt: message.createdAt,
+        isGroup: message.isGroup,
+        chatId: chatId,
+        avatar,
+      });
+    });
+
+    return res.json({ chats: userChats });
+  } catch (error) {
+    console.error('Error fetching user chats:', error);
+    return res.status(500).json({ error: 'Error fetching chats' });
+  }
+});
+
 const MONGO_URI =
   'mongodb+srv://Nirmaychoksi:NirmayChoksi2002@cluster0.sq3jqlb.mongodb.net/VW_Database';
 
