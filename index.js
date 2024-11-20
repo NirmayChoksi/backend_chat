@@ -221,7 +221,7 @@ app.get('/user-chats/:userId', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const userGroups = await Group.find({ users: userId }, '_id').lean();
+    const userGroups = await Group.find({ users: userId }, '_id avatar').lean();
     const groupIds = userGroups.map((group) => group._id.toString());
 
     const chats = await Chat.find({
