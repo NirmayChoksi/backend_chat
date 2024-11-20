@@ -67,6 +67,19 @@ app.post('/login', async (req, res) => {
     const avatars = [
       'https://cdn-icons-png.flaticon.com/512/6997/6997662.png',
       'https://cdn-icons-png.flaticon.com/128/1999/1999625.png',
+      'https://cdn-icons-png.flaticon.com/128/2202/2202112.png',
+      'https://cdn-icons-png.flaticon.com/128/4333/4333609.png',
+      'https://cdn-icons-png.flaticon.com/128/4140/4140047.png',
+      'https://cdn-icons-png.flaticon.com/128/706/706830.png',
+      'https://cdn-icons-png.flaticon.com/128/706/706816.png',
+      'https://cdn-icons-png.flaticon.com/128/219/219970.png',
+      'https://cdn-icons-png.flaticon.com/128/706/706831.png',
+      'https://cdn-icons-png.flaticon.com/128/4139/4139951.png',
+      'https://cdn-icons-png.flaticon.com/128/4140/4140040.png',
+      'https://cdn-icons-png.flaticon.com/128/2552/2552801.png',
+      'https://cdn-icons-png.flaticon.com/128/4140/4140051.png',
+      'https://cdn-icons-png.flaticon.com/128/1154/1154473.png',
+      'https://cdn-icons-png.flaticon.com/128/4140/4140077.png',
     ];
 
     // Check if the user already exists, case-insensitive search
