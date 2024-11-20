@@ -169,12 +169,10 @@ app.post('/create-group', async (req, res) => {
     const newGroup = new Group({ users: userIds, name, avatar: randomAvatar });
     await newGroup.save();
 
-    return res
-      .status(200)
-      .json({
-        message: 'Group successfully created.',
-        id: newGroup._id.toString(),
-      });
+    return res.status(200).json({
+      message: 'Group successfully created.',
+      id: newGroup._id.toString(),
+    });
   } catch (error) {
     return res.status(500).json({ error: 'Error creating group' });
   }
@@ -272,6 +270,21 @@ app.get('/user-chats/:userId', async (req, res) => {
         chatId: chatId,
         avatar,
       });
+    });
+
+    userGroups.forEach((group) => {
+      if (!userChats[group.name]) {
+        userChats[group.name] = [
+          {
+            from: null,
+            message: null,
+            createdAt: null,
+            isGroup: true,
+            chatId: group._id,
+            avatar: group.avatar,
+          },
+        ];
+      }
     });
 
     return res.json({ chats: userChats });
