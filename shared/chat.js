@@ -44,7 +44,7 @@ const handleNewConnection = () => {
           content,
           isGroup: false,
           imageUrl,
-        });
+        }).populate('from');
         const recipientId = users.get(to);
 
         const sender = users.get(from);
@@ -78,7 +78,7 @@ const handleNewConnection = () => {
           content,
           isGroup: true,
           imageUrl,
-        });
+        }).populate('from');
         const groupMembers = groups.get(groupId);
         if (groupMembers) {
           io.to(groupMembers).emit('group_message', newMessage);
