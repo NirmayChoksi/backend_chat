@@ -222,7 +222,6 @@ app.get('/user-chats/:userId', async (req, res) => {
     const userChats = {};
 
     chats.forEach((message) => {
-      console.log('message:', message);
       let key;
       let chatId;
       let avatar;
