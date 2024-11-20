@@ -44,14 +44,22 @@ const handleNewConnection = () => {
           content,
           isGroup: false,
           imageUrl,
-        }).populate('from');
+        });
+
+        const populatedMessage = await Chat.findById(newMessage._id).populate(
+          'from'
+        );
+
         const recipientId = users.get(to);
 
         const sender = users.get(from);
         if (recipientId) {
-          io.to([recipientId, sender]).emit('private_message', newMessage);
+          io.to([recipientId, sender]).emit(
+            'private_message',
+            populatedMessage
+          );
         } else {
-          io.to([sender]).emit('private_message', newMessage);
+          io.to([sender]).emit('private_message', populatedMessage);
         }
       }
     );
@@ -78,10 +86,15 @@ const handleNewConnection = () => {
           content,
           isGroup: true,
           imageUrl,
-        }).populate('from');
+        });
+
+        const populatedMessage = await Chat.findById(newMessage._id).populate(
+          'from'
+        );
+
         const groupMembers = groups.get(groupId);
         if (groupMembers) {
-          io.to(groupMembers).emit('group_message', newMessage);
+          io.to(groupMembers).emit('group_message', populatedMessage);
         }
       }
     );
