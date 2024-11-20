@@ -4,8 +4,8 @@ const { Schema } = mongoose;
 
 const userSchema = new Schema(
   {
-    userName: { type: String },
-    avatar: { type: String },
+    userName: { type: String, required: true },
+    avatar: { type: String, required: true },
   },
   {
     timestamps: true, // Adds createdAt and updatedAt fields

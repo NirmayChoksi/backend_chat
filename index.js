@@ -72,7 +72,7 @@ app.post('/login', async (req, res) => {
     // Check if the user already exists, case-insensitive search
     let user = await User.findOne({
       userName: { $regex: new RegExp('^' + userName + '$', 'i') },
-    });
+    }).lean();
 
     if (!user) {
       // If user doesn't exist, create a new user with a random avatar
@@ -87,9 +87,7 @@ app.post('/login', async (req, res) => {
 
     // Return the user ID and userName (along with avatar if needed)
     return res.json({
-      userId: user.id,
-      userName: user.userName,
-      avatar: user.avatar,
+      user: { ...user, _id: user._id.toString() },
     });
   } catch (error) {
     console.error('Error in login API:', error);
@@ -172,14 +170,35 @@ app.get('/users/:userId', async (req, res) => {
 
     const users = await User.find({ _id: { $ne: userId } }).lean();
 
-    return res.json({ users });
+    return res.json({
+      users: users.map((u) => {
+        return { ...u, _id: u._id.toString() };
+      }),
+    });
   } catch (error) {
     console.error('Error fetching user chats:', error);
     return res.status(500).json({ error: 'Error fetching chats' });
   }
 });
 
-app.get('/user-chats/:user', async (req, res) => {
+app.get('/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).lean();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    return res.json({
+      user: { ...user, _id: user._id.toString() },
+    });
+  } catch (error) {
+    console.error('Error fetching user chats:', error);
+    return res.status(500).json({ error: 'Error fetching chats' });
+  }
+});
+
+app.get('/user-chats/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -196,13 +215,14 @@ app.get('/user-chats/:user', async (req, res) => {
       status: 'ACTIVE',
     })
       .sort({ createdAt: -1 })
-      .populate('to', 'userName name')
+      .populate('to')
       .populate('from')
       .lean();
 
     const userChats = {};
 
     chats.forEach((message) => {
+      console.log('message:', message);
       let key;
       let chatId;
       let avatar;
