@@ -93,7 +93,9 @@ const handleNewConnection = () => {
           { from: userId.trim(), to: chatWithId.trim(), isGroup },
           { from: chatWithId.trim(), to: userId.trim(), isGroup },
         ],
-      }).sort({ timestamp: 1 });
+      })
+        .populate('from')
+        .sort({ timestamp: 1 });
 
       socket.emit('message_history', messages);
     });
