@@ -171,7 +171,10 @@ app.post('/create-group', async (req, res) => {
 
     return res
       .status(200)
-      .json({ message: 'Group successfully created.', id: newGroup.id });
+      .json({
+        message: 'Group successfully created.',
+        id: newGroup._id.toString(),
+      });
   } catch (error) {
     return res.status(500).json({ error: 'Error creating group' });
   }
