@@ -46,9 +46,9 @@ const handleNewConnection = () => {
           imageUrl,
         });
 
-        const populatedMessage = await Chat.findById(newMessage._id).populate(
-          'from'
-        );
+        const populatedMessage = await Chat.findById(newMessage._id)
+          .populate('from')
+          .lean();
 
         const recipientId = users.get(to);
 
@@ -86,13 +86,19 @@ const handleNewConnection = () => {
         imageUrl,
       });
 
-      const populatedMessage = await Chat.findById(newMessage._id).populate(
-        'from'
-      );
+      const populatedMessage = await Chat.findById(newMessage._id)
+        .populate('from')
+        .lean();
 
-      const groupMembers = groups.get(to);
-      if (groupMembers) {
-        io.to(groupMembers).emit('group_message', populatedMessage);
+      if (groups.has(to)) {
+        const usersInGroup = groups.get(to);
+        const recipientIds = Array.from(usersInGroup)
+          .map((id) => users.get(id))
+          .filter(Boolean);
+
+        if (recipientIds.length > 0) {
+          io.to(recipientIds).emit('group_message', populatedMessage);
+        }
       }
     });
 
@@ -122,7 +128,7 @@ const handleNewConnection = () => {
 
       const deletedMessage = await Chat.findByIdAndUpdate(message['_id'], {
         $set: { status: MessageStatus.deleted },
-      });
+      }).lean();
 
       if (!deletedMessage) {
         throw new Error('Message not found.', 404);
@@ -138,25 +144,21 @@ const handleNewConnection = () => {
 
     socket.on('typing', ({ to, typing, isGroup, from }) => {
       // Handle typing indication
-      let recipientId;
-      if (isGroup) {
-        if (groups.has(to)) {
-          const usersInGroup = groups.get(to);
-          const usersArray = Array.from(usersInGroup);
-          recipientId = usersArray.filter((id) => id !== from);
-        }
+      let recipientIds = [];
+
+      if (isGroup && groups.has(to)) {
+        const usersInGroup = groups.get(to);
+        recipientIds = Array.from(usersInGroup)
+          .filter((id) => id !== from)
+          .map((id) => users.get(id))
+          .filter(Boolean);
       } else {
-        recipientId = users.get(to);
+        const recipientId = users.get(to);
+        if (recipientId) recipientIds.push(recipientId);
       }
-      if (Array.isArray(recipientId)) {
-        recipientId.forEach((r) => {
-          const test = users.get(r);
-          if (test) {
-            io.to(test).emit('user_typing', typing);
-          }
-        });
-      } else {
-        io.to(recipientId).emit('user_typing', typing);
+
+      if (recipientIds.length > 0) {
+        io.to(recipientIds).emit('user_typing', typing);
       }
     });
   });
