@@ -72,41 +72,42 @@ const handleNewConnection = () => {
       }
 
       groups.get(groupId).add(userId);
-      console.log(`User ${userId} joined group ${groupId}`);
+      // console.log(`User ${userId} joined group ${groupId}`);
     });
 
-    socket.on(
-      'send_group_message',
-      async ({ from, groupId, content, imageUrl }) => {
-        // Handle group message
-        const newMessage = await Chat.create({
-          from,
-          to: groupId,
-          toRef: 'Group',
-          content,
-          isGroup: true,
-          imageUrl,
-        });
+    socket.on('send_group_message', async ({ from, to, content, imageUrl }) => {
+      // Handle group message
+      const newMessage = await Chat.create({
+        from,
+        to,
+        toRef: 'Group',
+        content,
+        isGroup: true,
+        imageUrl,
+      });
 
-        const populatedMessage = await Chat.findById(newMessage._id).populate(
-          'from'
-        );
+      const populatedMessage = await Chat.findById(newMessage._id).populate(
+        'from'
+      );
 
-        const groupMembers = groups.get(groupId);
-        if (groupMembers) {
-          io.to(groupMembers).emit('group_message', populatedMessage);
-        }
+      const groupMembers = groups.get(to);
+      if (groupMembers) {
+        io.to(groupMembers).emit('group_message', populatedMessage);
       }
-    );
+    });
 
     socket.on('fetch_messages', async ({ userId, chatWithId, isGroup }) => {
       // Handle fetching message history
-      const messages = await Chat.find({
-        $or: [
-          { from: userId.trim(), to: chatWithId.trim(), isGroup },
-          { from: chatWithId.trim(), to: userId.trim(), isGroup },
-        ],
-      })
+      const query = isGroup
+        ? { to: chatWithId }
+        : {
+            $or: [
+              { from: userId.trim(), to: chatWithId.trim() },
+              { from: chatWithId.trim(), to: userId.trim() },
+            ],
+          };
+
+      const messages = await Chat.find(query)
         .populate('from')
         .sort({ timestamp: 1 });
 
@@ -135,10 +136,26 @@ const handleNewConnection = () => {
       console.log('Deleted message:', deletedMessage);
     });
 
-    socket.on('typing', ({ to, typing }) => {
+    socket.on('typing', ({ to, typing, isGroup, from }) => {
       // Handle typing indication
-      const recipientId = users.get(to);
-      if (recipientId) {
+      let recipientId;
+      if (isGroup) {
+        if (groups.has(to)) {
+          const usersInGroup = groups.get(to);
+          const usersArray = Array.from(usersInGroup);
+          recipientId = usersArray.filter((id) => id !== from);
+        }
+      } else {
+        recipientId = users.get(to);
+      }
+      if (Array.isArray(recipientId)) {
+        recipientId.forEach((r) => {
+          const test = users.get(r);
+          if (test) {
+            io.to(test).emit('user_typing', typing);
+          }
+        });
+      } else {
         io.to(recipientId).emit('user_typing', typing);
       }
     });
