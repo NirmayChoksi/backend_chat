@@ -49,7 +49,10 @@ const handleNewConnection = () => {
 
         const populatedMessage = await Chat.findById(newMessage._id)
           .populate('from')
-          .populate({ path: 'reference', populate: 'from' })
+          .populate({
+            path: 'reference',
+            populate: { path: 'from' },
+          })
           .lean();
 
         const recipientId = users.get(to);
@@ -93,7 +96,10 @@ const handleNewConnection = () => {
 
         const populatedMessage = await Chat.findById(newMessage._id)
           .populate('from')
-          .populate({ path: 'reference', populate: 'from' })
+          .populate({
+            path: 'reference',
+            populate: { path: 'from' },
+          })
           .lean();
 
         if (groups.has(to)) {
