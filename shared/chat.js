@@ -128,6 +128,10 @@ const handleNewConnection = () => {
 
       const messages = await Chat.find(query)
         .populate('from')
+        .populate({
+          path: 'reference',
+          populate: { path: 'from' },
+        })
         .sort({ timestamp: 1 });
 
       socket.emit('message_history', messages);
