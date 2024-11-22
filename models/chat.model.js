@@ -20,6 +20,7 @@ const chatSchema = new Schema(
       enum: Object.values(MessageStatus),
       default: MessageStatus.active,
     },
+    reference: { type: Schema.Types.ObjectId, ref: 'Chat' },
   },
   {
     timestamps: true, // Adds createdAt and updatedAt fields

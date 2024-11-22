@@ -36,7 +36,7 @@ const handleNewConnection = () => {
 
     socket.on(
       'send_private_message',
-      async ({ from, to, content, imageUrl }) => {
+      async ({ from, to, content, imageUrl, reference }) => {
         // Handle private message
         const newMessage = await Chat.create({
           from,
@@ -44,10 +44,12 @@ const handleNewConnection = () => {
           content,
           isGroup: false,
           imageUrl,
+          reference,
         });
 
         const populatedMessage = await Chat.findById(newMessage._id)
           .populate('from')
+          .populate({ path: 'reference', populate: 'from' })
           .lean();
 
         const recipientId = users.get(to);
@@ -75,32 +77,37 @@ const handleNewConnection = () => {
       // console.log(`User ${userId} joined group ${groupId}`);
     });
 
-    socket.on('send_group_message', async ({ from, to, content, imageUrl }) => {
-      // Handle group message
-      const newMessage = await Chat.create({
-        from,
-        to,
-        toRef: 'Group',
-        content,
-        isGroup: true,
-        imageUrl,
-      });
+    socket.on(
+      'send_group_message',
+      async ({ from, to, content, imageUrl, reference }) => {
+        // Handle group message
+        const newMessage = await Chat.create({
+          from,
+          to,
+          toRef: 'Group',
+          content,
+          isGroup: true,
+          imageUrl,
+          reference,
+        });
 
-      const populatedMessage = await Chat.findById(newMessage._id)
-        .populate('from')
-        .lean();
+        const populatedMessage = await Chat.findById(newMessage._id)
+          .populate('from')
+          .populate({ path: 'reference', populate: 'from' })
+          .lean();
 
-      if (groups.has(to)) {
-        const usersInGroup = groups.get(to);
-        const recipientIds = Array.from(usersInGroup)
-          .map((id) => users.get(id))
-          .filter(Boolean);
+        if (groups.has(to)) {
+          const usersInGroup = groups.get(to);
+          const recipientIds = Array.from(usersInGroup)
+            .map((id) => users.get(id))
+            .filter(Boolean);
 
-        if (recipientIds.length > 0) {
-          io.to(recipientIds).emit('group_message', populatedMessage);
+          if (recipientIds.length > 0) {
+            io.to(recipientIds).emit('group_message', populatedMessage);
+          }
         }
       }
-    });
+    );
 
     socket.on('fetch_messages', async ({ userId, chatWithId, isGroup }) => {
       // Handle fetching message history
