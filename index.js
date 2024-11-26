@@ -10,6 +10,7 @@ const { initializeSocketIo } = require('./shared/chat'); // Import the socket ha
 const { Group } = require('./models/group.model');
 const { Chat } = require('./models/chat.model');
 const { User } = require('./models/user.model');
+require('dotenv').config();
 
 // Initialize the app
 const app = express();
@@ -195,20 +196,21 @@ app.get('/users/:userId', async (req, res) => {
   }
 });
 
-app.get('/:userId', async (req, res) => {
+app.get('/users', async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { excludeIds = [] } = req.query; // Expect a query parameter 'excludeIds' as an array
+    const excludeArray = Array.isArray(excludeIds) ? excludeIds : [excludeIds];
 
-    const user = await User.findById(userId).lean();
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    const users = await User.find({ _id: { $nin: excludeArray } }).lean();
+
     return res.json({
-      user: { ...user, _id: user._id.toString() },
+      users: users.map((u) => {
+        return { ...u, _id: u._id.toString() };
+      }),
     });
   } catch (error) {
-    console.error('Error fetching user chats:', error);
-    return res.status(500).json({ error: 'Error fetching chats' });
+    console.error('Error fetching users:', error);
+    return res.status(500).json({ error: 'Error fetching users' });
   }
 });
 
@@ -297,10 +299,69 @@ app.get('/user-chats/:userId', async (req, res) => {
   }
 });
 
-const MONGO_URI =
-  'mongodb+srv://Nirmaychoksi:NirmayChoksi2002@cluster0.sq3jqlb.mongodb.net/VW_Chat_Database';
+app.post('/group/add-users', async (req, res) => {
+  try {
+    const { groupId, userIds } = req.body; // Accept `userIds` as an array
 
-mongoose.connect(MONGO_URI).then(() => {
+    const users = await User.find({ _id: { $in: userIds } }).lean();
+    if (users.length !== userIds.length) {
+      return res.status(404).json({ error: 'Users not found' });
+    }
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    // Filter out already existing users
+    const newUsers = userIds.filter((userId) => !group.users.includes(userId));
+
+    if (newUsers.length === 0) {
+      return res
+        .status(400)
+        .json({ error: 'All users are already in the group' });
+    }
+
+    group.users.push(...newUsers); // Add only new users
+    await group.save();
+
+    return res.status(200).json({
+      message: `${newUsers.length} user(s) added to the group`,
+      group,
+    });
+  } catch (error) {
+    console.error('Error adding users to group:', error);
+    return res.status(500).json({ error: 'Error adding users to group' });
+  }
+});
+
+app.post('/group/remove-users', async (req, res) => {
+  try {
+    const { groupId, userIds } = req.body;
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    group.users = group.users.filter(
+      (userId) => !userIds.includes(userId.toString())
+    );
+
+    await group.save();
+
+    return res.status(200).json({
+      message: `${usersToRemove.length} user(s) removed from the group`,
+      group,
+    });
+  } catch (error) {
+    console.error('Error removing users from group:', error);
+    return res.status(500).json({ error: 'Error removing users from group' });
+  }
+});
+
+console.log('process.env.MONGO_URI:', process.env.MONGO_URI);
+mongoose.connect(process.env.MONGO_URI).then(() => {
   console.log('Connected to MongoDB');
 });
 
