@@ -325,7 +325,6 @@ app.post('/group/add-users', async (req, res) => {
 
     return res.status(200).json({
       message: `${newUsers.length} user(s) added to the group`,
-      group,
     });
   } catch (error) {
     console.error('Error adding users to group:', error);
@@ -350,7 +349,6 @@ app.post('/group/remove-users', async (req, res) => {
 
     return res.status(200).json({
       message: `${usersToRemove.length} user(s) removed from the group`,
-      group,
     });
   } catch (error) {
     console.error('Error removing users from group:', error);
@@ -358,7 +356,6 @@ app.post('/group/remove-users', async (req, res) => {
   }
 });
 
-console.log('process.env.MONGO_URI:', process.env.MONGO_URI);
 mongoose.connect(process.env.MONGO_URI).then(() => {
   console.log('Connected to MongoDB');
 });
