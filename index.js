@@ -199,7 +199,7 @@ app.get('/users', async (req, res) => {
     const { excludeIds = [] } = req.query; // Expect a query parameter 'excludeIds' as an array
     const excludeArray = Array.isArray(excludeIds) ? excludeIds : [excludeIds];
 
-    const users = await User.find({ _id: { $nin: excludeArray } }).lean();
+    const users = await User.find({ _id: { $ne: excludeArray } }).lean();
 
     return res.json({
       users: users.map((u) => {
