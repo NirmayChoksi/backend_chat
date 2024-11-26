@@ -297,6 +297,21 @@ app.get('/user-chats/:userId', async (req, res) => {
   }
 });
 
+app.get('/group/:groupId', async (req, res) => {
+  try {
+    const { groupId } = req.params;
+
+    const group = await Group.findById(groupId).populate('users').lean();
+
+    return res.json({
+      group,
+    });
+  } catch (error) {
+    console.error('Error fetching user chats:', error);
+    return res.status(500).json({ error: 'Error fetching chats' });
+  }
+});
+
 app.post('/group/add-users', async (req, res) => {
   try {
     const { groupId, userIds } = req.body; // Accept `userIds` as an array
