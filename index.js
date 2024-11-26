@@ -179,16 +179,14 @@ app.post('/create-group', async (req, res) => {
   }
 });
 
-app.get('/users/:userId', async (req, res) => {
+app.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const users = await User.find({ _id: { $ne: userId } }).lean();
+    const user = await User.findById(userId).lean();
 
     return res.json({
-      users: users.map((u) => {
-        return { ...u, _id: u._id.toString() };
-      }),
+      user: { ...user, _id: user._id.toString() },
     });
   } catch (error) {
     console.error('Error fetching user chats:', error);
